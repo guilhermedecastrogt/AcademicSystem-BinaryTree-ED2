@@ -16,7 +16,6 @@ public class SearchResultFrame extends JFrame {
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
 
-        // Popula a tabela com os alunos ordenados
         for (Aluno aluno : sortedAlunos) {
             tableModel.addRow(new Object[]{aluno.getMatricula(), aluno.getNome(), aluno.getTurno(), aluno.getPeriodo(), aluno.getEnfase(), aluno.getCurso()});
         }

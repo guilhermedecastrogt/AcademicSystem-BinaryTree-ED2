@@ -1,12 +1,12 @@
 public class Aluno {
-    private int matricula;
+    private String matricula;  // Agora é String
     private String nome;
     private Turno turno;
     private int periodo;
     private String enfase;
     private String curso;
 
-    public Aluno(int matricula, String nome, Turno turno, int periodo, String enfase, String curso) {
+    public Aluno(String matricula, String nome, Turno turno, int periodo, String enfase, String curso) {
         this.matricula = matricula;
         this.nome = nome;
         this.turno = turno;
@@ -15,7 +15,7 @@ public class Aluno {
         this.curso = curso;
     }
 
-    public int getMatricula() { return matricula; }
+    public String getMatricula() { return matricula; }
     public String getNome() { return nome; }
     public Turno getTurno() { return turno; }
     public int getPeriodo() { return periodo; }

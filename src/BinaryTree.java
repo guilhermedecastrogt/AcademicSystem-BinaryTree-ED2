@@ -22,7 +22,8 @@ public class BinaryTree {
             return root;
         }
 
-        if (byName ? aluno.getNome().compareTo(root.aluno.getNome()) < 0 : aluno.getMatricula() < root.aluno.getMatricula()) {
+        if (byName ? aluno.getNome().compareTo(root.aluno.getNome()) < 0
+                : aluno.getMatricula().compareTo(root.aluno.getMatricula()) < 0) {
             root.left = insertRec(root.left, aluno, byName);
         } else {
             root.right = insertRec(root.right, aluno, byName);
@@ -37,7 +38,7 @@ public class BinaryTree {
     private void inOrderTraversalRec(Node root, List<Aluno> alunoList) {
         if (root != null) {
             inOrderTraversalRec(root.left, alunoList);
-            alunoList.add(root.aluno);  // Adiciona o aluno na lista em ordem
+            alunoList.add(root.aluno);
             inOrderTraversalRec(root.right, alunoList);
         }
     }

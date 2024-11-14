@@ -2,6 +2,10 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,14 +29,17 @@ public class MainFrame extends JFrame {
         JButton btnBuscar = new JButton("Buscar");
         JButton btnListar = new JButton("Listar");
         JButton btnCarregar = new JButton("Carregar Arquivo");
+        JButton btnDeletar = new JButton("Deletar");
 
         buttonPanel.add(btnIncluir);
         buttonPanel.add(btnBuscar);
         buttonPanel.add(btnListar);
         buttonPanel.add(btnCarregar);
+        buttonPanel.add(btnDeletar);
 
         add(buttonPanel, BorderLayout.NORTH);
 
+        // Configuração da tabela
         String[] columnNames = {"Matricula", "Nome", "Turno", "Periodo", "Enfase", "Curso"};
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
@@ -42,6 +49,7 @@ public class MainFrame extends JFrame {
         btnBuscar.addActionListener(this::buscarAluno);
         btnListar.addActionListener(this::listarAlunos);
         btnCarregar.addActionListener(this::carregarArquivo);
+        btnDeletar.addActionListener(this::deletarAluno);
 
         setVisible(true);
     }
@@ -71,7 +79,7 @@ public class MainFrame extends JFrame {
 
         int result = JOptionPane.showConfirmDialog(null, panel, "Incluir Aluno", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
-            int matricula = Integer.parseInt(matriculaField.getText());
+            String matricula = matriculaField.getText();
             String nome = nomeField.getText();
             Turno turno = (Turno) turnoComboBox.getSelectedItem();
             int periodo = Integer.parseInt(periodoField.getText());
@@ -84,17 +92,7 @@ public class MainFrame extends JFrame {
     }
 
     private void buscarAluno(ActionEvent e) {
-        String[] options = {"Nome Crescente", "Nome Decrescente", "Matricula Crescente", "Matricula Decrescente"};
-        String option = (String) JOptionPane.showInputDialog(this, "Selecione a ordem de busca:",
-                "Buscar Aluno", JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-
-        if (option != null) {
-            boolean byName = option.contains("Nome");
-            boolean ascending = option.contains("Crescente");
-            List<Aluno> sortedAlunos = listarOrdenado(byName, ascending);
-
-            new SearchResultFrame(sortedAlunos);
-        }
+        new SearchDialog(this, alunoList);
     }
 
     private void listarAlunos(ActionEvent e) {
@@ -110,7 +108,7 @@ public class MainFrame extends JFrame {
         List<Aluno> sortedAlunos = new LinkedList<>();
         binaryTree.inOrderTraversal(sortedAlunos);
         if (!ascending) {
-            sortedAlunos.sort((a, b) -> byName ? b.getNome().compareTo(a.getNome()) : b.getMatricula() - a.getMatricula());
+            sortedAlunos.sort((a, b) -> byName ? b.getNome().compareTo(a.getNome()) : b.getMatricula().compareTo(a.getMatricula()));
         }
 
         tableModel.setRowCount(0);
@@ -122,10 +120,37 @@ public class MainFrame extends JFrame {
     }
 
     private void carregarArquivo(ActionEvent e) {
-        alunoList.clear();
-        alunoList.addAluno(new Aluno(1, "Joao", Turno.MATUTINO, 1, "Computacao", "Engenharia"));
-        alunoList.addAluno(new Aluno(2, "Maria", Turno.NOTURNO, 3, "Matematica", "Licenciatura"));
-        JOptionPane.showMessageDialog(this, "Dados carregados na lista!");
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            alunoList.clear(); // Limpa a lista antes de carregar novos dados
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] data = line.split(";");
+                    if (data.length == 6) {
+                        String matricula = data[0];
+                        String nome = data[1];
+                        Turno turno = Turno.valueOf(data[2].toUpperCase());
+                        int periodo = Integer.parseInt(data[3]);
+                        String enfase = data[4];
+                        String curso = data[5];
+                        Aluno aluno = new Aluno(matricula, nome, turno, periodo, enfase, curso);
+                        alunoList.addAluno(aluno);
+                    }
+                }
+                JOptionPane.showMessageDialog(this, "Dados carregados com sucesso!");
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao carregar o arquivo: " + ex.getMessage());
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, "Erro nos dados do arquivo: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void deletarAluno(ActionEvent e) {
+        new DeleteDialog(this, alunoList, binaryTree);
     }
 
     public static void main(String[] args) {
