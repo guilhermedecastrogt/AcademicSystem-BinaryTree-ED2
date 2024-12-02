@@ -4,19 +4,17 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class BinaryTreeApp {
-    private BinaryTree treeByName;
-    private BinaryTree treeByMatricula;
+    private TreeSet<Aluno> treeByName;
+    private TreeMap<String, Aluno> treeByMatricula;
     private JFrame frame;
     private DefaultTableModel tableModel;
 
     public BinaryTreeApp() {
-        treeByName = new BinaryTree();
-        treeByMatricula = new BinaryTree();
+        treeByName = new TreeSet<>(Comparator.comparing(Aluno::getNome));
+        treeByMatricula = new TreeMap<>();
         initialize();
     }
 
@@ -29,33 +27,28 @@ public class BinaryTreeApp {
         mainPanel.setLayout(new BorderLayout());
         frame.add(mainPanel);
 
-        // Tabela para exibir os alunos
         tableModel = new DefaultTableModel(new Object[]{"Matrícula", "Nome", "Turno", "Período", "Ênfase", "Curso"}, 0);
         JTable table = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(table);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Painel lateral para os botões
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(5, 1, 10, 10));
         buttonPanel.setBackground(Color.LIGHT_GRAY);
         mainPanel.add(buttonPanel, BorderLayout.WEST);
 
-        // Botões com estilo moderno
         JButton addButton = createStyledButton("Adicionar Aluno");
         JButton deleteButton = createStyledButton("Excluir Aluno");
         JButton searchButton = createStyledButton("Buscar Aluno");
         JButton listButton = createStyledButton("Listar Alunos");
         JButton loadFileButton = createStyledButton("Carregar Arquivo");
 
-        // Adicionar botões ao painel
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(searchButton);
         buttonPanel.add(listButton);
         buttonPanel.add(loadFileButton);
 
-        // Ações dos botões
         addButton.addActionListener(e -> openAddAlunoWindow());
         deleteButton.addActionListener(e -> openDeleteAlunoWindow());
         searchButton.addActionListener(e -> openSearchAlunoWindow());
@@ -65,11 +58,10 @@ public class BinaryTreeApp {
         frame.setVisible(true);
     }
 
-    // Método para criar botões estilizados
     private JButton createStyledButton(String text) {
         JButton button = new JButton(text);
         button.setFocusPainted(false);
-        button.setBackground(new Color(0, 123, 255)); // Azul moderno
+        button.setBackground(new Color(0, 123, 255));
         button.setForeground(Color.WHITE);
         button.setFont(new Font("Arial", Font.BOLD, 14));
         button.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
@@ -101,8 +93,8 @@ public class BinaryTreeApp {
                         String curso = parts[5].trim();
 
                         Aluno aluno = new Aluno(matricula, nome, turno, periodo, enfase, curso);
-                        treeByName.insert(aluno, true);
-                        treeByMatricula.insert(aluno, false);
+                        treeByName.add(aluno);
+                        treeByMatricula.put(matricula, aluno);
                     }
                 }
 
@@ -159,11 +151,12 @@ public class BinaryTreeApp {
                 }
 
                 Aluno aluno = new Aluno(matricula, nome, turno, periodo, enfase, curso);
-                treeByName.insert(aluno, true);
-                treeByMatricula.insert(aluno, false);
+                treeByName.add(aluno);
+                treeByMatricula.put(matricula, aluno);
 
                 JOptionPane.showMessageDialog(addFrame, "Aluno adicionado com sucesso!");
                 addFrame.dispose();
+                listAlunos();
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(addFrame, "Período deve ser um número inteiro.");
             }
@@ -174,6 +167,80 @@ public class BinaryTreeApp {
         addFrame.setVisible(true);
     }
 
+    private void openSearchAlunoWindow() {
+        JFrame searchFrame = new JFrame("Buscar/Listar Alunos");
+        searchFrame.setSize(600, 400);
+        searchFrame.setLayout(new BorderLayout());
+
+        JPanel controlPanel = new JPanel();
+        controlPanel.setLayout(new GridLayout(2, 2));
+
+        JTextField searchField = new JTextField();
+        JComboBox<String> searchByField = new JComboBox<>(new String[]{"Nome", "Matrícula"});
+        JButton searchButton = createStyledButton("Buscar");
+        JButton closeButton = createStyledButton("Fechar");
+
+        controlPanel.add(new JLabel("Buscar por:"));
+        controlPanel.add(searchField);
+        controlPanel.add(new JLabel("Tipo de Busca:"));
+        controlPanel.add(searchByField);
+
+        DefaultTableModel searchTableModel = new DefaultTableModel(
+                new Object[]{"Matrícula", "Nome", "Turno", "Período", "Ênfase", "Curso"}, 0);
+        JTable searchTable = new JTable(searchTableModel);
+        JScrollPane scrollPane = new JScrollPane(searchTable);
+
+        searchFrame.add(controlPanel, BorderLayout.NORTH);
+        searchFrame.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(searchButton);
+        buttonPanel.add(closeButton);
+        searchFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        searchButton.addActionListener(e -> {
+            String key = searchField.getText();
+            boolean byName = searchByField.getSelectedItem().equals("Nome");
+
+            searchTableModel.setRowCount(0);
+
+            if (byName) {
+                for (Aluno aluno : treeByName) {
+                    if (aluno.getNome().equalsIgnoreCase(key)) {
+                        searchTableModel.addRow(new Object[]{
+                                aluno.getMatricula(),
+                                aluno.getNome(),
+                                aluno.getTurno(),
+                                aluno.getPeriodo(),
+                                aluno.getEnfase(),
+                                aluno.getCurso()
+                        });
+                    }
+                }
+            } else {
+                Aluno aluno = treeByMatricula.get(key);
+                if (aluno != null) {
+                    searchTableModel.addRow(new Object[]{
+                            aluno.getMatricula(),
+                            aluno.getNome(),
+                            aluno.getTurno(),
+                            aluno.getPeriodo(),
+                            aluno.getEnfase(),
+                            aluno.getCurso()
+                    });
+                }
+            }
+
+            if (searchTableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(searchFrame, "Nenhum aluno encontrado.");
+            }
+        });
+
+        closeButton.addActionListener(e -> searchFrame.dispose());
+
+        searchFrame.setVisible(true);
+    }
+
     private void openDeleteAlunoWindow() {
         JFrame deleteFrame = new JFrame("Excluir Aluno");
         deleteFrame.setSize(400, 200);
@@ -181,8 +248,8 @@ public class BinaryTreeApp {
 
         JTextField keyField = new JTextField();
         JComboBox<String> deleteByField = new JComboBox<>(new String[]{"Nome", "Matrícula"});
-        JButton deleteButton = new JButton("Excluir");
-        JButton cancelButton = new JButton("Cancelar");
+        JButton deleteButton = createStyledButton("Excluir");
+        JButton cancelButton = createStyledButton("Cancelar");
 
         deleteFrame.add(new JLabel("Informe o Nome ou Matrícula:"));
         deleteFrame.add(keyField);
@@ -200,8 +267,14 @@ public class BinaryTreeApp {
                 return;
             }
 
-            treeByName.delete(key, byName);
-            treeByMatricula.delete(key, byName);
+            if (byName) {
+                treeByName.removeIf(aluno -> aluno.getNome().equals(key));
+            } else {
+                Aluno aluno = treeByMatricula.remove(key);
+                if (aluno != null) {
+                    treeByName.remove(aluno);
+                }
+            }
 
             JOptionPane.showMessageDialog(deleteFrame, "Aluno excluído com sucesso!");
             listAlunos();
@@ -213,117 +286,10 @@ public class BinaryTreeApp {
         deleteFrame.setVisible(true);
     }
 
-    private void openSearchAlunoWindow() {
-        JFrame searchFrame = new JFrame("Buscar/Listar Alunos");
-        searchFrame.setSize(600, 400);
-        searchFrame.setLayout(new BorderLayout());
-
-        JPanel controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayout(3, 2));
-
-        JTextField searchField = new JTextField();
-        JComboBox<String> searchByField = new JComboBox<>(new String[]{"Nome", "Matrícula"});
-        JComboBox<String> orderField = new JComboBox<>(new String[]{
-                "Nome Crescente", "Nome Decrescente", "Matrícula Crescente", "Matrícula Decrescente"
-        });
-        JButton searchButton = new JButton("Buscar");
-        JButton listButton = new JButton("Listar");
-        JButton closeButton = new JButton("Fechar");
-
-        controlPanel.add(new JLabel("Buscar por Nome ou Matrícula:"));
-        controlPanel.add(searchField);
-        controlPanel.add(new JLabel("Tipo de Busca:"));
-        controlPanel.add(searchByField);
-        controlPanel.add(searchButton);
-        controlPanel.add(listButton);
-
-        DefaultTableModel searchTableModel = new DefaultTableModel(
-                new Object[]{"Matrícula", "Nome", "Turno", "Período", "Ênfase", "Curso"}, 0);
-        JTable searchTable = new JTable(searchTableModel);
-        JScrollPane searchScrollPane = new JScrollPane(searchTable);
-
-        searchFrame.add(controlPanel, BorderLayout.NORTH);
-        searchFrame.add(searchScrollPane, BorderLayout.CENTER);
-
-        JPanel bottomPanel = new JPanel();
-        bottomPanel.setLayout(new FlowLayout());
-        bottomPanel.add(new JLabel("Ordenar por:"));
-        bottomPanel.add(orderField);
-        bottomPanel.add(closeButton);
-        searchFrame.add(bottomPanel, BorderLayout.SOUTH);
-
-        searchButton.addActionListener(e -> {
-            String key = searchField.getText();
-            boolean byName = searchByField.getSelectedItem().equals("Nome");
-
-            if (key.isEmpty()) {
-                JOptionPane.showMessageDialog(searchFrame, "Por favor, informe o Nome ou Matrícula para buscar!");
-                return;
-            }
-
-            Aluno aluno = byName ? treeByName.search(key, true) : treeByMatricula.search(key, false);
-            searchTableModel.setRowCount(0);
-
-            if (aluno != null) {
-                searchTableModel.addRow(new Object[]{
-                        aluno.getMatricula(),
-                        aluno.getNome(),
-                        aluno.getTurno(),
-                        aluno.getPeriodo(),
-                        aluno.getEnfase(),
-                        aluno.getCurso()
-                });
-            } else {
-                JOptionPane.showMessageDialog(searchFrame, "Aluno não encontrado!");
-            }
-        });
-
-        listButton.addActionListener(e -> {
-            String orderOption = (String) orderField.getSelectedItem();
-            List<Aluno> alunos = new ArrayList<>();
-            treeByName.inOrderTraversal(alunos);
-
-            switch (orderOption) {
-                case "Nome Crescente":
-                    alunos.sort(Comparator.comparing(Aluno::getNome));
-                    break;
-                case "Nome Decrescente":
-                    alunos.sort(Comparator.comparing(Aluno::getNome).reversed());
-                    break;
-                case "Matrícula Crescente":
-                    alunos.sort(Comparator.comparing(Aluno::getMatricula));
-                    break;
-                case "Matrícula Decrescente":
-                    alunos.sort(Comparator.comparing(Aluno::getMatricula).reversed());
-                    break;
-            }
-
-            searchTableModel.setRowCount(0);
-            for (Aluno aluno : alunos) {
-                searchTableModel.addRow(new Object[]{
-                        aluno.getMatricula(),
-                        aluno.getNome(),
-                        aluno.getTurno(),
-                        aluno.getPeriodo(),
-                        aluno.getEnfase(),
-                        aluno.getCurso()
-                });
-            }
-        });
-
-        closeButton.addActionListener(e -> searchFrame.dispose());
-
-        searchFrame.setVisible(true);
-    }
-
-
     private void listAlunos() {
-        List<Aluno> alunos = new ArrayList<>();
-        //treeByName.inOrderTraversal(alunos);
-        treeByMatricula.inOrderTraversal(alunos);
-
         tableModel.setRowCount(0);
-        for (Aluno aluno : alunos) {
+
+        for (Aluno aluno : treeByName) {
             tableModel.addRow(new Object[]{
                     aluno.getMatricula(),
                     aluno.getNome(),
