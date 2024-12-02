@@ -4,17 +4,17 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.TreeMap;
+import java.util.TreeSet;
 
-public class BinaryTreeApp {
-    private TreeMap<String, Aluno> alunosPorMatricula;
-    private TreeMap<String, Aluno> alunosPorNome;
+public class BinaryTreeSetApp {
+    private TreeSet<Aluno> alunosPorNome;
+    private TreeSet<Aluno> alunosPorMatricula;
     private JFrame frame;
     private DefaultTableModel tableModel;
 
-    public BinaryTreeApp() {
-        alunosPorMatricula = new TreeMap<>();
-        alunosPorNome = new TreeMap<>();
+    public BinaryTreeSetApp() {
+        alunosPorNome = new TreeSet<>((a1, a2) -> a1.getNome().compareToIgnoreCase(a2.getNome()));
+        alunosPorMatricula = new TreeSet<>((a1, a2) -> a1.getMatricula().compareToIgnoreCase(a2.getMatricula()));
         initialize();
     }
 
@@ -93,8 +93,8 @@ public class BinaryTreeApp {
                         String curso = parts[5].trim();
 
                         Aluno aluno = new Aluno(matricula, nome, turno, periodo, enfase, curso);
-                        alunosPorMatricula.put(matricula, aluno);
-                        alunosPorNome.put(nome, aluno);
+                        alunosPorNome.add(aluno);
+                        alunosPorMatricula.add(aluno);
                     }
                 }
 
@@ -151,8 +151,8 @@ public class BinaryTreeApp {
                 }
 
                 Aluno aluno = new Aluno(matricula, nome, turno, periodo, enfase, curso);
-                alunosPorMatricula.put(matricula, aluno);
-                alunosPorNome.put(nome, aluno);
+                alunosPorNome.add(aluno);
+                alunosPorMatricula.add(aluno);
 
                 JOptionPane.showMessageDialog(addFrame, "Aluno adicionado com sucesso!");
                 addFrame.dispose();
@@ -204,18 +204,37 @@ public class BinaryTreeApp {
 
             searchTableModel.setRowCount(0);
 
-            Aluno aluno = byName ? alunosPorNome.get(key) : alunosPorMatricula.get(key);
-
-            if (aluno != null) {
-                searchTableModel.addRow(new Object[]{
-                        aluno.getMatricula(),
-                        aluno.getNome(),
-                        aluno.getTurno(),
-                        aluno.getPeriodo(),
-                        aluno.getEnfase(),
-                        aluno.getCurso()
-                });
+            if (byName) {
+                for (Aluno aluno : alunosPorNome) {
+                    if (aluno.getNome().equalsIgnoreCase(key)) {
+                        searchTableModel.addRow(new Object[]{
+                                aluno.getMatricula(),
+                                aluno.getNome(),
+                                aluno.getTurno(),
+                                aluno.getPeriodo(),
+                                aluno.getEnfase(),
+                                aluno.getCurso()
+                        });
+                        break;
+                    }
+                }
             } else {
+                for (Aluno aluno : alunosPorMatricula) {
+                    if (aluno.getMatricula().equalsIgnoreCase(key)) {
+                        searchTableModel.addRow(new Object[]{
+                                aluno.getMatricula(),
+                                aluno.getNome(),
+                                aluno.getTurno(),
+                                aluno.getPeriodo(),
+                                aluno.getEnfase(),
+                                aluno.getCurso()
+                        });
+                        break;
+                    }
+                }
+            }
+
+            if (searchTableModel.getRowCount() == 0) {
                 JOptionPane.showMessageDialog(searchFrame, "Nenhum aluno encontrado.");
             }
         });
@@ -251,11 +270,12 @@ public class BinaryTreeApp {
                 return;
             }
 
-            Aluno aluno = byName ? alunosPorNome.remove(key) : alunosPorMatricula.remove(key);
-
-            if (aluno != null) {
-                alunosPorMatricula.remove(aluno.getMatricula());
-                alunosPorNome.remove(aluno.getNome());
+            if (byName) {
+                alunosPorNome.removeIf(aluno -> aluno.getNome().equalsIgnoreCase(key));
+                alunosPorMatricula.removeIf(aluno -> aluno.getNome().equalsIgnoreCase(key));
+            } else {
+                alunosPorNome.removeIf(aluno -> aluno.getMatricula().equalsIgnoreCase(key));
+                alunosPorMatricula.removeIf(aluno -> aluno.getMatricula().equalsIgnoreCase(key));
             }
 
             JOptionPane.showMessageDialog(deleteFrame, "Aluno excluído com sucesso!");
@@ -271,7 +291,7 @@ public class BinaryTreeApp {
     private void listAlunos() {
         tableModel.setRowCount(0);
 
-        for (Aluno aluno : alunosPorMatricula.values()) {
+        for (Aluno aluno : alunosPorMatricula) {
             tableModel.addRow(new Object[]{
                     aluno.getMatricula(),
                     aluno.getNome(),
